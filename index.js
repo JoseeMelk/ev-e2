@@ -3,12 +3,55 @@ const express = require('express');
 const path = require('path');
 const pool = require('./db');
 const ExcelJS = require('exceljs');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
 
 const app = express();
 app.use(express.json());
 app.use(express.static('public'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// GET - Listar productos con búsqueda, filtro y paginación
+/**
+ * @swagger
+ * /api/productos:
+ *   get:
+ *     summary: Listar productos con búsqueda, filtros y paginación
+ *     parameters:
+ *       - in: query
+ *         name: busqueda
+ *         schema:
+ *           type: string
+ *         description: Buscar por nombre o SKU
+ *       - in: query
+ *         name: categoria
+ *         schema:
+ *           type: string
+ *         description: Filtrar por categoría
+ *       - in: query
+ *         name: pagina
+ *         schema:
+ *           type: integer
+ *         description: Número de página
+ *       - in: query
+ *         name: limite
+ *         schema:
+ *           type: integer
+ *         description: Registros por página
+ *       - in: query
+ *         name: orden
+ *         schema:
+ *           type: string
+ *         description: Columna de ordenamiento
+ *       - in: query
+ *         name: dir
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *         description: Dirección del ordenamiento
+ *     responses:
+ *       200:
+ *         description: Lista de productos
+ */
 app.get('/api/productos', async (req, res) => {
   const { busqueda = '', categoria = '', pagina = 1, limite = 10, orden = 'id', dir = 'ASC' } = req.query;
   const offset = (pagina - 1) * limite;
@@ -46,20 +89,74 @@ app.get('/api/productos', async (req, res) => {
   }
 });
 
-// GET - Categorías únicas
+/**
+ * @swagger
+ * /api/categorias:
+ *   get:
+ *     summary: Listar categorías únicas
+ *     responses:
+ *       200:
+ *         description: Lista de categorías
+ */
 app.get('/api/categorias', async (req, res) => {
   const result = await pool.query('SELECT DISTINCT categoria FROM productos ORDER BY categoria');
   res.json(result.rows.map(r => r.categoria));
 });
 
-// GET - Un producto
+/**
+ * @swagger
+ * /api/productos/{id}:
+ *   get:
+ *     summary: Obtener un producto por ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Producto encontrado
+ *       404:
+ *         description: No encontrado
+ */
 app.get('/api/productos/:id', async (req, res) => {
   const result = await pool.query('SELECT * FROM productos WHERE id = $1', [req.params.id]);
   if (!result.rows.length) return res.status(404).json({ error: 'No encontrado' });
   res.json(result.rows[0]);
 });
 
-// POST - Crear producto
+/**
+ * @swagger
+ * /api/productos:
+ *   post:
+ *     summary: Crear un nuevo producto
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [nombre, sku, categoria, precio, stock]
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *               sku:
+ *                 type: string
+ *               categoria:
+ *                 type: string
+ *               precio:
+ *                 type: number
+ *               stock:
+ *                 type: integer
+ *               activo:
+ *                 type: boolean
+ *     responses:
+ *       201:
+ *         description: Producto creado
+ *       400:
+ *         description: Faltan campos obligatorios
+ */
 app.post('/api/productos', async (req, res) => {
   const { nombre, sku, categoria, precio, stock, activo } = req.body;
   if (!nombre || !sku || !categoria || precio == null || stock == null)
@@ -75,7 +172,42 @@ app.post('/api/productos', async (req, res) => {
   }
 });
 
-// PUT - Editar producto
+/**
+ * @swagger
+ * /api/productos/{id}:
+ *   put:
+ *     summary: Editar un producto
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *               sku:
+ *                 type: string
+ *               categoria:
+ *                 type: string
+ *               precio:
+ *                 type: number
+ *               stock:
+ *                 type: integer
+ *               activo:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Producto actualizado
+ *       404:
+ *         description: No encontrado
+ */
 app.put('/api/productos/:id', async (req, res) => {
   const { nombre, sku, categoria, precio, stock, activo } = req.body;
   try {
@@ -90,14 +222,47 @@ app.put('/api/productos/:id', async (req, res) => {
   }
 });
 
-// DELETE - Eliminar producto
+/**
+ * @swagger
+ * /api/productos/{id}:
+ *   delete:
+ *     summary: Eliminar un producto
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Eliminado correctamente
+ *       404:
+ *         description: No encontrado
+ */
 app.delete('/api/productos/:id', async (req, res) => {
   const result = await pool.query('DELETE FROM productos WHERE id = $1 RETURNING id', [req.params.id]);
   if (!result.rows.length) return res.status(404).json({ error: 'No encontrado' });
   res.json({ mensaje: 'Eliminado correctamente' });
 });
 
-// GET - Exportar Excel
+/**
+ * @swagger
+ * /api/export/excel:
+ *   get:
+ *     summary: Exportar productos a Excel
+ *     parameters:
+ *       - in: query
+ *         name: busqueda
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: categoria
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Archivo Excel generado
+ */
 app.get('/api/export/excel', async (req, res) => {
   const { busqueda = '', categoria = '' } = req.query;
   const filtros = [];

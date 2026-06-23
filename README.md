@@ -14,6 +14,7 @@ Aplicación web CRUD para administración de productos, desarrollada con Node.js
 - **Base de datos:** appdb
 - **Usuario BD:** diegoglez
 
+
 ## Arquitectura
 Internet
 
@@ -151,7 +152,6 @@ Para actualizar la app con los últimos cambios de GitHub:
 
 El script realiza: git pull, npm install y pm2 restart automáticamente.
 
----
 
 ## Migración MySQL a PostgreSQL
 
@@ -189,7 +189,6 @@ PGPASSWORD=123456 pg_dump -U diegoglez -h localhost -d appdb -F c -f respaldo_ap
 PGPASSWORD=123456 pg_restore -U diegoglez -h localhost -d appdb -F c respaldo_appdb.dump
 ```
 
----
 
 ## API Endpoints
 
@@ -212,7 +211,6 @@ PGPASSWORD=123456 pg_restore -U diegoglez -h localhost -d appdb -F c respaldo_ap
 - orden — columna de ordenamiento (default: id)
 - dir — dirección ASC o DESC (default: ASC)
 
----
 
 ## Funcionalidades de la app
 
@@ -226,8 +224,6 @@ PGPASSWORD=123456 pg_restore -U diegoglez -h localhost -d appdb -F c respaldo_ap
 - Exportación a Excel (.xlsx)
 - Validaciones en formulario
 
----
-
 ## Seguridad implementada
 
 - Usuario de BD (diegoglez) sin privilegios de superusuario
@@ -238,7 +234,6 @@ PGPASSWORD=123456 pg_restore -U diegoglez -h localhost -d appdb -F c respaldo_ap
 - HTTPS con SSL autofirmado
 - Consultas con parámetros preparados (prevención SQL injection)
 
----
 
 ## HTTPS y SSL
 
@@ -254,7 +249,6 @@ Para producción real con dominio propio se recomienda Let's Encrypt:
 certbot --nginx -d tudominio.com
 ```
 
----
 
 ## Autor
 
