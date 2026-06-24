@@ -32,7 +32,7 @@ docker exec -i evaluacion_postgres psql -U diegoglez -d appdb < /tmp/backup_nuev
 
 ---
 
-## 2. Backend (`server.js`)
+## 2. Backend (`index.js`)
 
 ### Campo de columnas válidas para ordenamiento
 
