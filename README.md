@@ -237,19 +237,11 @@ PGPASSWORD=123456 pg_restore -U diegoglez -h localhost -d appdb -F c respaldo_ap
 
 ## HTTPS y SSL
 
-La aplicación cuenta con HTTPS habilitado mediante certificado SSL autofirmado generado con OpenSSL.
-
-Al acceder vía https://143.198.237.96 el navegador mostrará una advertencia de seguridad. Esto es normal con certificados autofirmados ya que no están emitidos por una autoridad certificadora reconocida, pero la conexión sí está cifrada.
-
-Para acceder: clic en "Configuración avanzada" y luego "Acceder al sitio".
-
-Para producción real con dominio propio se recomienda Let's Encrypt:
-
-```bash
-certbot --nginx -d tudominio.com
-```
+No hay https, let's encrypt necesita de un dominio.
 
 
 ## Autor
 
 Diego González — Evaluación Técnica VPS B — Junio 2026
+
+JoseeMelk — Evaluación Técnica — Junio 2026
