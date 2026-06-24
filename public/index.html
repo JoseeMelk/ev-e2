@@ -8,7 +8,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; background: #f4f6f8; color: #333; }
   header { background: #2c3e50; color: white; padding: 16px 24px; font-size: 1.3rem; font-weight: bold; }
-  .container { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
+  .container { max-width: 1400px; margin: 24px auto; padding: 0 16px; }
   .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; align-items: center; }
   input, select { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; }
   button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; }
@@ -29,7 +29,7 @@
   .pagination button { min-width: 36px; }
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
   .modal-overlay.active { display: flex; }
-  .modal { background: white; border-radius: 10px; padding: 28px; width: 460px; max-width: 95vw; }
+  .modal { background: white; border-radius: 10px; padding: 28px; width: 460px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
   .modal h2 { margin-bottom: 18px; }
   .form-group { margin-bottom: 14px; }
   .form-group label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 0.9rem; }
@@ -42,7 +42,7 @@
 <header>🛒 Administrador de Productos</header>
 <div class="container">
   <div class="toolbar">
-    <input type="text" id="busqueda" placeholder="Buscar por nombre o SKU..." style="flex:1; min-width:200px">
+    <input type="text" id="busqueda" placeholder="Buscar por nombre, SKU, categoría o marca..." style="flex:1; min-width:200px">
     <select id="filtroCategoria"><option value="">Todas las categorías</option></select>
     <button class="btn-primary" onclick="cargar()">🔍 Buscar</button>
     <button class="btn-success" onclick="abrirModal()">➕ Nuevo</button>
@@ -56,6 +56,8 @@
         <th onclick="ordenar('nombre')">Nombre ↕</th>
         <th onclick="ordenar('sku')">SKU ↕</th>
         <th onclick="ordenar('categoria')">Categoría ↕</th>
+        <th onclick="ordenar('marca')">Marca ↕</th>
+        <th>Código Barras</th>
         <th onclick="ordenar('precio')">Precio ↕</th>
         <th onclick="ordenar('stock')">Stock ↕</th>
         <th>Estado</th>
@@ -79,6 +81,8 @@
     <div class="form-group"><label>Nombre *</label><input id="fNombre" placeholder="Nombre del producto"></div>
     <div class="form-group"><label>SKU *</label><input id="fSku" placeholder="Código único"></div>
     <div class="form-group"><label>Categoría *</label><input id="fCategoria" placeholder="Ej: Electrónica"></div>
+    <div class="form-group"><label>Marca</label><input id="fMarca" placeholder="Ej: Samsung"></div>
+    <div class="form-group"><label>Código de Barras</label><input id="fCodigoBarras" placeholder="Ej: 7501234567890"></div>
     <div class="form-group"><label>Precio *</label><input id="fPrecio" type="number" step="0.01" placeholder="0.00"></div>
     <div class="form-group"><label>Stock *</label><input id="fStock" type="number" placeholder="0"></div>
     <div class="form-group"><label>Estado</label>
@@ -107,6 +111,8 @@ async function cargar() {
       <td>${p.nombre}</td>
       <td>${p.sku}</td>
       <td>${p.categoria}</td>
+      <td>${p.marca ?? ''}</td>
+      <td>${p.codigo_barras ?? ''}</td>
       <td>$${parseFloat(p.precio).toFixed(2)}</td>
       <td>${p.stock}</td>
       <td><span class="badge ${p.activo ? 'badge-on' : 'badge-off'}">${p.activo ? 'Activo' : 'Inactivo'}</span></td>
@@ -142,7 +148,7 @@ function abrirModal(id = null) {
   editId = id;
   document.getElementById('modalTitulo').textContent = id ? 'Editar Producto' : 'Nuevo Producto';
   if (!id) {
-    ['fNombre','fSku','fCategoria','fPrecio','fStock'].forEach(f => document.getElementById(f).value = '');
+    ['fNombre','fSku','fCategoria','fPrecio','fStock','fMarca','fCodigoBarras'].forEach(f => document.getElementById(f).value = '');
     document.getElementById('fActivo').value = 'true';
   }
   document.getElementById('modalOverlay').classList.add('active');
@@ -159,6 +165,8 @@ async function editar(id) {
   document.getElementById('fNombre').value = p.nombre;
   document.getElementById('fSku').value = p.sku;
   document.getElementById('fCategoria').value = p.categoria;
+  document.getElementById('fMarca').value = p.marca ?? '';
+  document.getElementById('fCodigoBarras').value = p.codigo_barras ?? '';
   document.getElementById('fPrecio').value = p.precio;
   document.getElementById('fStock').value = p.stock;
   document.getElementById('fActivo').value = p.activo ? 'true' : 'false';
@@ -170,6 +178,8 @@ async function guardar() {
     nombre: document.getElementById('fNombre').value.trim(),
     sku: document.getElementById('fSku').value.trim(),
     categoria: document.getElementById('fCategoria').value.trim(),
+    marca: document.getElementById('fMarca').value.trim() || null,
+    codigo_barras: document.getElementById('fCodigoBarras').value.trim() || null,
     precio: parseFloat(document.getElementById('fPrecio').value),
     stock: parseInt(document.getElementById('fStock').value),
     activo: document.getElementById('fActivo').value === 'true'

@@ -21,7 +21,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *         name: busqueda
  *         schema:
  *           type: string
- *         description: Buscar por nombre o SKU
+ *         description: Buscar por nombre, SKU, categoría o marca
  *       - in: query
  *         name: categoria
  *         schema:
@@ -55,7 +55,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/api/productos', async (req, res) => {
   const { busqueda = '', categoria = '', pagina = 1, limite = 10, orden = 'id', dir = 'ASC' } = req.query;
   const offset = (pagina - 1) * limite;
-  const columnas = ['id','nombre','sku','categoria','precio','stock','activo','fecha_registro'];
+  const columnas = ['id','nombre','sku','categoria','precio','stock','activo','fecha_registro','marca','codigo_barras'];
   const ordenSeguro = columnas.includes(orden) ? orden : 'id';
   const dirSeguro = dir === 'DESC' ? 'DESC' : 'ASC';
 
@@ -65,7 +65,7 @@ app.get('/api/productos', async (req, res) => {
     let i = 1;
 
     if (busqueda) {
-      filtros.push(`(nombre ILIKE $${i} OR sku ILIKE $${i})`);
+      filtros.push(`(nombre ILIKE $${i} OR sku ILIKE $${i} OR categoria ILIKE $${i} OR marca ILIKE $${i})`);
       valores.push(`%${busqueda}%`);
       i++;
     }
@@ -151,6 +151,10 @@ app.get('/api/productos/:id', async (req, res) => {
  *                 type: integer
  *               activo:
  *                 type: boolean
+ *               marca:
+ *                 type: string
+ *               codigo_barras:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Producto creado
@@ -158,13 +162,13 @@ app.get('/api/productos/:id', async (req, res) => {
  *         description: Faltan campos obligatorios
  */
 app.post('/api/productos', async (req, res) => {
-  const { nombre, sku, categoria, precio, stock, activo } = req.body;
+  const { nombre, sku, categoria, precio, stock, activo, marca, codigo_barras } = req.body;
   if (!nombre || !sku || !categoria || precio == null || stock == null)
     return res.status(400).json({ error: 'Faltan campos obligatorios' });
   try {
     const result = await pool.query(
-      'INSERT INTO productos (nombre, sku, categoria, precio, stock, activo) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-      [nombre, sku, categoria, precio, stock, activo ?? true]
+      'INSERT INTO productos (nombre, sku, categoria, precio, stock, activo, marca, codigo_barras) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
+      [nombre, sku, categoria, precio, stock, activo ?? true, marca ?? null, codigo_barras ?? null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -202,6 +206,10 @@ app.post('/api/productos', async (req, res) => {
  *                 type: integer
  *               activo:
  *                 type: boolean
+ *               marca:
+ *                 type: string
+ *               codigo_barras:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Producto actualizado
@@ -209,11 +217,11 @@ app.post('/api/productos', async (req, res) => {
  *         description: No encontrado
  */
 app.put('/api/productos/:id', async (req, res) => {
-  const { nombre, sku, categoria, precio, stock, activo } = req.body;
+  const { nombre, sku, categoria, precio, stock, activo, marca, codigo_barras } = req.body;
   try {
     const result = await pool.query(
-      `UPDATE productos SET nombre=$1, sku=$2, categoria=$3, precio=$4, stock=$5, activo=$6 WHERE id=$7 RETURNING *`,
-      [nombre, sku, categoria, precio, stock, activo, req.params.id]
+      `UPDATE productos SET nombre=$1, sku=$2, categoria=$3, precio=$4, stock=$5, activo=$6, marca=$7, codigo_barras=$8 WHERE id=$9 RETURNING *`,
+      [nombre, sku, categoria, precio, stock, activo, marca ?? null, codigo_barras ?? null, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'No encontrado' });
     res.json(result.rows[0]);
@@ -268,7 +276,7 @@ app.get('/api/export/excel', async (req, res) => {
   const filtros = [];
   const valores = [];
   let i = 1;
-  if (busqueda) { filtros.push(`(nombre ILIKE $${i} OR sku ILIKE $${i})`); valores.push(`%${busqueda}%`); i++; }
+  if (busqueda) { filtros.push(`(nombre ILIKE $${i} OR sku ILIKE $${i} OR categoria ILIKE $${i} OR marca ILIKE $${i})`); valores.push(`%${busqueda}%`); i++; }
   if (categoria) { filtros.push(`categoria = $${i}`); valores.push(categoria); i++; }
   const where = filtros.length ? `WHERE ${filtros.join(' AND ')}` : '';
 
@@ -281,6 +289,8 @@ app.get('/api/export/excel', async (req, res) => {
     { header: 'Nombre', key: 'nombre', width: 30 },
     { header: 'SKU', key: 'sku', width: 18 },
     { header: 'Categoría', key: 'categoria', width: 20 },
+    { header: 'Marca', key: 'marca', width: 20 },
+    { header: 'Código de Barras', key: 'codigo_barras', width: 22 },
     { header: 'Precio', key: 'precio', width: 12 },
     { header: 'Stock', key: 'stock', width: 10 },
     { header: 'Activo', key: 'activo', width: 10 },
